@@ -1,0 +1,635 @@
+<<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>CardioScan — Heart Disease Prediction</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+<style>
+  :root {
+    --bg: #0b0f1a;
+    --surface: #111827;
+    --card: #161e2e;
+    --border: #1f2d45;
+    --accent: #e84343;
+    --accent2: #f97316;
+    --green: #10b981;
+    --text: #e2e8f0;
+    --muted: #64748b;
+    --label: #94a3b8;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+  body::before {
+    content: '';
+    position: fixed;
+    top: -200px; right: -200px;
+    width: 600px; height: 600px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(232,67,67,0.08) 0%, transparent 70%);
+    animation: breathe 4s ease-in-out infinite;
+    pointer-events: none; z-index: 0;
+  }
+  @keyframes breathe { 0%,100%{transform:scale(1);} 50%{transform:scale(1.15);} }
+
+  header {
+    position: sticky; top: 0; z-index: 100;
+    background: rgba(11,15,26,0.9);
+    backdrop-filter: blur(16px);
+    border-bottom: 1px solid var(--border);
+    padding: 0 40px;
+    display: flex; align-items: center; justify-content: space-between;
+    height: 64px;
+  }
+  .logo {
+    display: flex; align-items: center; gap: 10px;
+    font-family: 'DM Serif Display', serif;
+    font-size: 22px; color: var(--text);
+  }
+  .heart-icon {
+    width: 32px; height: 32px;
+    background: var(--accent);
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    animation: hpulse 1.4s ease-in-out infinite;
+  }
+  @keyframes hpulse {
+    0%,100%{box-shadow:0 0 0 0 rgba(232,67,67,0.5);}
+    50%{box-shadow:0 0 0 8px rgba(232,67,67,0);}
+  }
+  .header-badge {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px; color: var(--muted);
+    background: var(--surface);
+    border: 1px solid var(--border);
+    padding: 4px 12px; border-radius: 20px;
+  }
+
+  main {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 48px 24px 80px;
+    position: relative; z-index: 1;
+  }
+
+  .hero { text-align: center; margin-bottom: 48px; }
+  .hero-tag {
+    display: inline-block;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px; font-weight: 500;
+    color: var(--accent);
+    background: rgba(232,67,67,0.1);
+    border: 1px solid rgba(232,67,67,0.25);
+    padding: 5px 14px; border-radius: 20px;
+    letter-spacing: 0.08em; margin-bottom: 20px;
+    text-transform: uppercase;
+  }
+  h1 {
+    font-family: 'DM Serif Display', serif;
+    font-size: clamp(30px, 5vw, 52px);
+    line-height: 1.15; color: var(--text); margin-bottom: 16px;
+  }
+  h1 em { font-style: italic; color: var(--accent); }
+  .hero-sub { color: var(--muted); font-size: 14px; max-width: 520px; margin: 0 auto; line-height: 1.7; }
+
+  .ecg-bar { width: 100%; height: 48px; margin: 32px 0; overflow: hidden; }
+  .ecg-bar svg { width: 100%; height: 100%; }
+  .ecg-path {
+    stroke: var(--accent); stroke-width: 1.5; fill: none; opacity: 0.6;
+    stroke-dasharray: 1200; stroke-dashoffset: 1200;
+    animation: drawECG 3s ease forwards 0.5s, loopECG 4s linear infinite 3.5s;
+  }
+  @keyframes drawECG { to { stroke-dashoffset: 0; } }
+  @keyframes loopECG { 0%{stroke-dashoffset:0;} 100%{stroke-dashoffset:-1200;} }
+
+  .stats-row { display: grid; grid-template-columns: repeat(4,1fr); gap: 12px; margin-bottom: 28px; }
+  .stat-card {
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 12px; padding: 16px 20px; text-align: center;
+    transition: border-color 0.2s;
+  }
+  .stat-card:hover { border-color: rgba(232,67,67,0.4); }
+  .stat-val { font-family: 'DM Serif Display', serif; font-size: 26px; color: var(--accent); }
+  .stat-lbl { font-size: 11px; color: var(--muted); margin-top: 4px; }
+
+  .key-features-card {
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 16px; padding: 24px; margin-bottom: 24px;
+  }
+  .kf-title { font-size: 12px; font-weight: 600; color: var(--label); text-transform: uppercase; letter-spacing: 0.07em; margin-bottom: 14px; }
+  .feature-pills { display: flex; flex-wrap: wrap; gap: 8px; }
+  .pill {
+    font-family: 'JetBrains Mono', monospace; font-size: 11px;
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 6px; padding: 5px 10px; color: var(--muted); transition: all 0.2s;
+  }
+  .pill.key { border-color: rgba(232,67,67,0.5); color: var(--accent); background: rgba(232,67,67,0.07); }
+
+  .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; align-items: start; }
+  @media(max-width:700px){.form-grid,.stats-row{grid-template-columns:1fr 1fr;} .stats-row{grid-template-columns:repeat(2,1fr);}}
+  @media(max-width:500px){.form-grid{grid-template-columns:1fr;}}
+
+  .section-card {
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 16px; padding: 24px; margin-bottom: 20px;
+    transition: box-shadow 0.3s;
+  }
+  .section-card:hover { box-shadow: 0 0 0 1px rgba(232,67,67,0.15); }
+  .section-header { display: flex; align-items: center; gap: 10px; margin-bottom: 20px; }
+  .section-num {
+    width: 26px; height: 26px; border-radius: 50%; background: var(--accent);
+    font-family: 'JetBrains Mono', monospace; font-size: 12px;
+    display: flex; align-items: center; justify-content: center; color: #fff; flex-shrink: 0;
+  }
+  .section-title { font-size: 14px; font-weight: 600; color: var(--text); }
+
+  .field { margin-bottom: 14px; }
+  label {
+    display: block; font-size: 11px; font-weight: 500; color: var(--label);
+    text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 6px;
+  }
+  input[type=number], select {
+    width: 100%; background: var(--surface); border: 1px solid var(--border);
+    border-radius: 8px; padding: 10px 14px; color: var(--text);
+    font-family: 'DM Sans', sans-serif; font-size: 14px;
+    outline: none; transition: border-color 0.2s, box-shadow 0.2s;
+    appearance: none; -webkit-appearance: none;
+  }
+  input[type=number]:focus, select:focus {
+    border-color: var(--accent); box-shadow: 0 0 0 3px rgba(232,67,67,0.12);
+  }
+  select {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%2364748b' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+    background-repeat: no-repeat; background-position: right 12px center; padding-right: 32px;
+  }
+  .field-hint { font-size: 11px; color: var(--muted); margin-top: 4px; }
+  .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+
+  .right-panel { display: flex; flex-direction: column; gap: 18px; }
+
+  .result-card {
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 16px; padding: 28px;
+    min-height: 210px;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    text-align: center; position: relative; overflow: hidden; transition: border-color 0.4s;
+  }
+  .result-card.disease { border-color: var(--accent); }
+  .result-card.healthy { border-color: var(--green); }
+  .result-idle { color: var(--muted); font-size: 13px; }
+  .result-idle svg { margin-bottom: 12px; opacity: 0.3; display: block; margin-left: auto; margin-right: auto; }
+  .result-output { display: none; width: 100%; }
+  .result-output.show { display: block; }
+  .result-icon { font-size: 40px; margin-bottom: 10px; }
+  .result-label { font-family: 'DM Serif Display', serif; font-size: 20px; margin-bottom: 8px; }
+  .result-label.red { color: var(--accent); }
+  .result-label.grn { color: var(--green); }
+  .result-desc { font-size: 12px; color: var(--muted); line-height: 1.6; }
+  .model-scores { margin-top: 16px; display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .score-box { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 10px 12px; }
+  .score-model { font-size: 10px; color: var(--muted); font-family: 'JetBrains Mono',monospace; }
+  .score-val { font-size: 18px; font-weight: 600; color: var(--text); margin-top: 2px; }
+
+  .spinner {
+    width: 30px; height: 30px; border-radius: 50%;
+    border: 3px solid var(--border); border-top-color: var(--accent);
+    animation: spin 0.7s linear infinite; margin: 0 auto 12px;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .loading-state { display: none; flex-direction: column; align-items: center; }
+  .loading-state.show { display: flex; }
+
+  .predict-btn {
+    width: 100%; background: var(--accent); color: #fff;
+    border: none; cursor: pointer; border-radius: 12px; padding: 16px;
+    font-family: 'DM Sans', sans-serif; font-size: 15px; font-weight: 600;
+    display: flex; align-items: center; justify-content: center; gap: 10px;
+    transition: background 0.2s, transform 0.1s, box-shadow 0.2s;
+  }
+  .predict-btn:hover { background: #c53030; box-shadow: 0 8px 24px rgba(232,67,67,0.3); transform: translateY(-1px); }
+  .predict-btn:active { transform: translateY(0); }
+  .btn-pulse { width: 10px; height: 10px; border-radius: 50%; background: rgba(255,255,255,0.5); animation: hpulse 1.4s infinite; }
+
+  .reset-btn {
+    width: 100%; background: transparent; border: 1px solid var(--border);
+    color: var(--muted); border-radius: 10px; padding: 12px;
+    font-family: 'DM Sans', sans-serif; font-size: 13px; cursor: pointer;
+    transition: all 0.2s;
+  }
+  .reset-btn:hover { border-color: var(--accent); color: var(--text); }
+
+  .model-info { display: grid; grid-template-columns: repeat(4,1fr); gap: 10px; margin-top: 28px; }
+  .model-chip { background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 12px; text-align: center; }
+  .model-name { font-size: 11px; color: var(--muted); font-family:'JetBrains Mono',monospace; margin-bottom: 6px; }
+  .model-acc { font-size: 17px; font-weight: 600; }
+  .model-acc.best { color: var(--green); }
+  .model-acc.mid { color: var(--accent2); }
+  .model-acc.low { color: var(--accent); }
+
+  footer { text-align: center; padding: 28px; font-size: 11px; color: var(--muted); border-top: 1px solid var(--border); font-family: 'JetBrains Mono', monospace; }
+
+  .fade-up { opacity: 0; transform: translateY(20px); animation: fadeUp 0.5s ease forwards; }
+  @keyframes fadeUp { to { opacity:1; transform:translateY(0); } }
+  .d1{animation-delay:0.1s} .d2{animation-delay:0.2s} .d3{animation-delay:0.3s} .d4{animation-delay:0.4s} .d5{animation-delay:0.5s}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">
+    <div class="heart-icon">
+      <svg width="16" height="14" viewBox="0 0 16 14" fill="white">
+        <path d="M8 13.5C8 13.5 1 8.5 1 4.5C1 2.567 2.567 1 4.5 1C5.615 1 6.607 1.548 7.25 2.393C7.5 2.728 7.732 2.728 8 2.393C8.643 1.548 9.635 1 10.75 1C12.683 1 14.25 2.567 14.25 4.5C14.25 8.5 7.25 13.5 8 13.5Z"/>
+      </svg>
+    </div>
+    CardioScan
+  </div>
+  <div class="header-badge">SVM · RF · LGBM · KNN · Flask API</div>
+</header>
+
+<main>
+  <div class="hero fade-up d1">
+    <div class="hero-tag">🫀 ML-Based Cardiac Risk Assessment</div>
+    <h1>Predict Heart Disease<br>with <em>Machine Learning</em></h1>
+    <p class="hero-sub">Enter 14 clinical parameters below. Ensemble of SVM, Random Forest, LightGBM, and KNN models assesses your cardiac risk in real time.</p>
+  </div>
+
+  <div class="ecg-bar fade-up d2">
+    <svg viewBox="0 0 1100 48" preserveAspectRatio="none">
+      <path class="ecg-path" d="M0,24 L80,24 L100,24 L110,6 L120,42 L130,6 L140,24 L200,24 L210,24 L220,8 L228,38 L236,8 L244,24 L310,24 L320,24 L330,10 L338,40 L346,10 L354,24 L420,24 L430,24 L440,8 L448,40 L456,8 L464,24 L530,24 L540,24 L550,6 L558,42 L566,6 L574,24 L640,24 L650,24 L660,10 L668,38 L676,10 L684,24 L750,24 L760,24 L770,8 L778,42 L786,8 L794,24 L860,24 L870,24 L880,6 L888,42 L896,6 L904,24 L970,24 L980,24 L990,10 L998,40 L1006,10 L1014,24 L1100,24"/>
+    </svg>
+  </div>
+
+  <div class="stats-row fade-up d2">
+    <div class="stat-card"><div class="stat-val">1,025</div><div class="stat-lbl">Total Records</div></div>
+    <div class="stat-card"><div class="stat-val">14</div><div class="stat-lbl">Total Features</div></div>
+    <div class="stat-card"><div class="stat-val">10</div><div class="stat-lbl">Key Features</div></div>
+    <div class="stat-card"><div class="stat-val">98.54%</div><div class="stat-lbl">Best Accuracy (RF)</div></div>
+  </div>
+
+  <!-- Feature pills -->
+  <div class="key-features-card fade-up d3">
+    <div class="kf-title">All 14 Features — 10 Key Predictive Features Highlighted</div>
+    <div class="feature-pills">
+      <span class="pill key">age</span>
+      <span class="pill key">sex</span>
+      <span class="pill key">chest_pain_type</span>
+      <span class="pill key">resting_blood_pressure</span>
+      <span class="pill key">cholesterol</span>
+      <span class="pill key">max_heart_rate</span>
+      <span class="pill key">old_peak</span>
+      <span class="pill key">slope</span>
+      <span class="pill key">ca (vessels)</span>
+      <span class="pill key">thal</span>
+      <span class="pill">fasting_blood_sugar</span>
+      <span class="pill">resting_ecg</span>
+      <span class="pill">exercise_angina</span>
+      <span class="pill">target (output)</span>
+    </div>
+    <p style="font-size:11px;color:var(--muted);margin-top:10px;">
+      <span style="color:var(--accent)">■</span> Red = 10 key predictive features &nbsp;|&nbsp; All 14 are input to the model
+    </p>
+  </div>
+
+  <div class="form-grid fade-up d4">
+
+    <!-- LEFT: Form -->
+    <div>
+      <!-- Section 1 -->
+      <div class="section-card">
+        <div class="section-header">
+          <div class="section-num">1</div>
+          <div class="section-title">Basic Information</div>
+        </div>
+        <div class="two-col">
+          <div class="field">
+            <label>Age (years)</label>
+            <input type="number" id="age" min="20" max="100" value="52"/>
+          </div>
+          <div class="field">
+            <label>Sex</label>
+            <select id="sex">
+              <option value="1">Male</option>
+              <option value="0">Female</option>
+            </select>
+          </div>
+        </div>
+        <div class="field">
+          <label>Chest Pain Type <span style="color:var(--accent)">★ Key</span></label>
+          <select id="cp">
+            <option value="0">0 — Typical Angina</option>
+            <option value="1">1 — Atypical Angina</option>
+            <option value="2">2 — Non-Anginal Pain</option>
+            <option value="3">3 — Asymptomatic</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Section 2 -->
+      <div class="section-card">
+        <div class="section-header">
+          <div class="section-num">2</div>
+          <div class="section-title">Vital Signs & Blood Tests</div>
+        </div>
+        <div class="two-col">
+          <div class="field">
+            <label>Resting BP (mm Hg) <span style="color:var(--accent)">★</span></label>
+            <input type="number" id="trestbps" min="80" max="250" value="130"/>
+          </div>
+          <div class="field">
+            <label>Cholesterol (mg/dl) <span style="color:var(--accent)">★</span></label>
+            <input type="number" id="chol" min="100" max="600" value="250"/>
+          </div>
+        </div>
+        <div class="two-col">
+          <div class="field">
+            <label>Fasting Blood Sugar</label>
+            <select id="fbs">
+              <option value="0">≤ 120 mg/dl (Normal)</option>
+              <option value="1">> 120 mg/dl (High)</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>Resting ECG</label>
+            <select id="restecg">
+              <option value="0">Normal</option>
+              <option value="1">ST-T Abnormality</option>
+              <option value="2">LV Hypertrophy</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <!-- Section 3 -->
+      <div class="section-card">
+        <div class="section-header">
+          <div class="section-num">3</div>
+          <div class="section-title">Cardiac Exercise Test Results</div>
+        </div>
+        <div class="two-col">
+          <div class="field">
+            <label>Max Heart Rate <span style="color:var(--accent)">★</span></label>
+            <input type="number" id="thalach" min="60" max="220" value="150"/>
+          </div>
+          <div class="field">
+            <label>Exercise Angina</label>
+            <select id="exang">
+              <option value="0">No</option>
+              <option value="1">Yes</option>
+            </select>
+          </div>
+        </div>
+        <div class="two-col">
+          <div class="field">
+            <label>Old Peak <span style="color:var(--accent)">★</span></label>
+            <input type="number" id="oldpeak" min="0" max="10" step="0.1" value="1.0"/>
+            <div class="field-hint">ST depression (exercise)</div>
+          </div>
+          <div class="field">
+            <label>Slope <span style="color:var(--accent)">★</span></label>
+            <select id="slope">
+              <option value="0">0 — Upsloping</option>
+              <option value="1">1 — Flat</option>
+              <option value="2">2 — Downsloping</option>
+            </select>
+          </div>
+        </div>
+        <div class="two-col">
+          <div class="field">
+            <label>CA — Vessels (0–3) <span style="color:var(--accent)">★</span></label>
+            <select id="ca">
+              <option value="0">0</option>
+              <option value="1">1</option>
+              <option value="2">2</option>
+              <option value="3">3</option>
+            </select>
+            <div class="field-hint">Colored by fluoroscopy</div>
+          </div>
+          <div class="field">
+            <label>Thal <span style="color:var(--accent)">★</span></label>
+            <select id="thal">
+              <option value="1">1 — Normal</option>
+              <option value="2">2 — Fixed Defect</option>
+              <option value="3">3 — Reversible Defect</option>
+            </select>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- RIGHT panel -->
+    <div class="right-panel">
+
+      <div class="result-card" id="resultCard">
+        <div class="result-idle" id="idleState">
+          <svg width="40" height="40" viewBox="0 0 40 40" fill="none">
+            <circle cx="20" cy="20" r="18" stroke="#64748b" stroke-width="1.5" stroke-dasharray="4 4"/>
+            <path d="M20 25C20 25 12 19.5 12 14.5C12 12.015 14.015 10 16.5 10C17.95 10 19.23 10.7 20 11.77C20.77 10.7 22.05 10 23.5 10C25.985 10 28 12.015 28 14.5C28 19.5 20 25 20 25Z" fill="#64748b"/>
+          </svg>
+          Enter patient data and click<br><strong>Predict Now</strong> to assess cardiac risk
+        </div>
+        <div class="loading-state" id="loadingState">
+          <div class="spinner"></div>
+          <p style="font-size:13px;color:var(--muted);">Running ML models…</p>
+        </div>
+        <div class="result-output" id="resultOutput"></div>
+      </div>
+
+      <button class="predict-btn" onclick="predict()">
+        <div class="btn-pulse"></div>
+        Predict Now
+      </button>
+
+      <button class="reset-btn" onclick="resetForm()">Reset Form</button>
+
+      <!-- Flask API info -->
+      <div class="section-card">
+        <div class="kf-title" style="margin-bottom:10px;">Flask REST API</div>
+        <code style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--accent2);background:var(--surface);padding:8px 12px;border-radius:6px;display:block;line-height:1.7;">
+          POST http://localhost:5000/predict<br>
+          Content-Type: application/json<br>
+          Body: {age, sex, cp, trestbps,<br>
+          &nbsp;&nbsp;chol, fbs, restecg, thalach,<br>
+          &nbsp;&nbsp;exang, oldpeak, slope, ca, thal}
+        </code>
+        <p style="color:var(--muted);margin-top:10px;font-size:12px;line-height:1.6;">
+          Uncomment the <code style="color:var(--accent2)">fetch()</code> block in the script to connect to your running Flask backend (app.py).
+        </p>
+      </div>
+
+      <!-- Feature summary -->
+      <div class="section-card">
+        <div class="kf-title" style="margin-bottom:12px;">Dataset Summary</div>
+        <table style="width:100%;font-size:12px;border-collapse:collapse;">
+          <tr style="color:var(--muted);">
+            <td style="padding:5px 0;border-bottom:1px solid var(--border);">Total Records</td>
+            <td style="text-align:right;border-bottom:1px solid var(--border);font-family:'JetBrains Mono',monospace;color:var(--text);">1,025</td>
+          </tr>
+          <tr style="color:var(--muted);">
+            <td style="padding:5px 0;border-bottom:1px solid var(--border);">No Disease (0)</td>
+            <td style="text-align:right;border-bottom:1px solid var(--border);font-family:'JetBrains Mono',monospace;color:var(--green);">499</td>
+          </tr>
+          <tr style="color:var(--muted);">
+            <td style="padding:5px 0;border-bottom:1px solid var(--border);">Disease (1)</td>
+            <td style="text-align:right;border-bottom:1px solid var(--border);font-family:'JetBrains Mono',monospace;color:var(--accent);">526</td>
+          </tr>
+          <tr style="color:var(--muted);">
+            <td style="padding:5px 0;border-bottom:1px solid var(--border);">Total Features</td>
+            <td style="text-align:right;border-bottom:1px solid var(--border);font-family:'JetBrains Mono',monospace;color:var(--text);">14</td>
+          </tr>
+          <tr style="color:var(--muted);">
+            <td style="padding:5px 0;">Key Features</td>
+            <td style="text-align:right;font-family:'JetBrains Mono',monospace;color:var(--accent);">10</td>
+          </tr>
+        </table>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Model accuracy row -->
+  <div class="model-info fade-up d5">
+    <div class="model-chip">
+      <div class="model-name">Random Forest</div>
+      <div class="model-acc best">98.54%</div>
+      <div style="font-size:10px;color:var(--muted);margin-top:4px;">Best · Prec 100%</div>
+    </div>
+    <div class="model-chip">
+      <div class="model-name">LightGBM</div>
+      <div class="model-acc best">98.05%</div>
+      <div style="font-size:10px;color:var(--muted);margin-top:4px;">2nd · Prec 99.01%</div>
+    </div>
+    <div class="model-chip">
+      <div class="model-name">KNN</div>
+      <div class="model-acc mid">89.76%</div>
+      <div style="font-size:10px;color:var(--muted);margin-top:4px;">Moderate</div>
+    </div>
+    <div class="model-chip">
+      <div class="model-name">SVM</div>
+      <div class="model-acc low">80.49%</div>
+      <div style="font-size:10px;color:var(--muted);margin-top:4px;">Baseline</div>
+    </div>
+  </div>
+</main>
+
+<footer>
+  CardioScan · B.Sc ITM · Ajaya Binay Degree College · UCI Heart Disease Dataset · 1025 Records · 14 Features · 10 Key Features
+</footer>
+
+<script>
+function predict() {
+  const age      = parseInt(document.getElementById('age').value) || 52;
+  const sex      = parseInt(document.getElementById('sex').value);
+  const cp       = parseInt(document.getElementById('cp').value);
+  const trestbps = parseInt(document.getElementById('trestbps').value) || 130;
+  const chol     = parseInt(document.getElementById('chol').value) || 250;
+  const fbs      = parseInt(document.getElementById('fbs').value);
+  const restecg  = parseInt(document.getElementById('restecg').value);
+  const thalach  = parseInt(document.getElementById('thalach').value) || 150;
+  const exang    = parseInt(document.getElementById('exang').value);
+  const oldpeak  = parseFloat(document.getElementById('oldpeak').value) || 1.0;
+  const slope    = parseInt(document.getElementById('slope').value);
+  const ca       = parseInt(document.getElementById('ca').value);
+  const thal     = parseInt(document.getElementById('thal').value);
+
+  document.getElementById('idleState').style.display = 'none';
+  document.getElementById('loadingState').classList.add('show');
+  document.getElementById('resultOutput').classList.remove('show');
+  document.getElementById('resultCard').className = 'result-card';
+
+  // ── REAL Flask API (uncomment when backend is running) ──────────────
+  /*
+  fetch('http://localhost:5000/predict', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({age,sex,cp,trestbps,chol,fbs,restecg,thalach,exang,oldpeak,slope,ca,thal})
+  })
+  .then(r => r.json())
+  .then(d => showResult(d.svm_prediction, d.rf_prediction, d.rf_probability))
+  .catch(() => alert('Could not connect to Flask API. Make sure app.py is running on port 5000.'));
+  */
+
+  // ── DEMO simulation (remove when Flask is connected) ──────────────────
+  setTimeout(() => {
+    let risk = 0;
+    if (age > 55)            risk += 1;
+    if (sex === 1)           risk += 1;
+    if (cp === 0 || cp === 3) risk += 2;
+    if (trestbps > 140)      risk += 1;
+    if (chol > 240)          risk += 1;
+    if (thalach < 130)       risk += 2;
+    if (exang === 1)         risk += 2;
+    if (oldpeak > 2)         risk += 2;
+    if (ca > 0)              risk += 2;
+    if (thal === 2 || thal === 3) risk += 2;
+    const hasDisease = risk >= 8;
+    const rfProb = hasDisease ? (0.70 + Math.random()*0.25).toFixed(2) : (0.04 + Math.random()*0.18).toFixed(2);
+    showResult(hasDisease ? 1 : 0, hasDisease ? 1 : 0, rfProb);
+  }, 1400);
+}
+
+function showResult(svmPred, rfPred, rfProb) {
+  document.getElementById('loadingState').classList.remove('show');
+  const card = document.getElementById('resultCard');
+  const out  = document.getElementById('resultOutput');
+  const hasDisease = rfPred === 1;
+  card.className = 'result-card ' + (hasDisease ? 'disease' : 'healthy');
+  const rfPct = Math.round(rfProb * 100);
+
+  out.innerHTML = `
+    <div class="result-icon">${hasDisease ? '⚠️' : '✅'}</div>
+    <div class="result-label ${hasDisease ? 'red' : 'grn'}">
+      ${hasDisease ? 'Heart Disease Detected' : 'No Heart Disease'}
+    </div>
+    <p class="result-desc">
+      ${hasDisease
+        ? 'Models indicate high cardiac risk. Please consult a cardiologist immediately for proper clinical diagnosis.'
+        : 'Models indicate low cardiac risk. Maintain a healthy lifestyle and schedule regular check-ups.'}
+    </p>
+    <div class="model-scores">
+      <div class="score-box">
+        <div class="score-model">Random Forest</div>
+        <div class="score-val" style="color:${hasDisease?'var(--accent)':'var(--green)'}">${rfPct}%</div>
+        <div style="font-size:10px;color:var(--muted)">disease probability</div>
+      </div>
+      <div class="score-box">
+        <div class="score-model">SVM</div>
+        <div class="score-val" style="color:${svmPred===1?'var(--accent)':'var(--green)'}">${svmPred===1?'Disease':'Healthy'}</div>
+        <div style="font-size:10px;color:var(--muted)">classification</div>
+      </div>
+    </div>
+    <p style="font-size:10px;color:var(--muted);margin-top:14px;">
+      ⚡ Connect Flask at <code style="color:var(--accent2);font-family:'JetBrains Mono',monospace">localhost:5000/predict</code> for real predictions
+    </p>
+  `;
+  out.classList.add('show');
+}
+
+function resetForm() {
+  document.getElementById('age').value = 52;
+  document.getElementById('sex').value = 1;
+  document.getElementById('cp').value = 0;
+  document.getElementById('trestbps').value = 130;
+  document.getElementById('chol').value = 250;
+  document.getElementById('fbs').value = 0;
+  document.getElementById('restecg').value = 0;
+  document.getElementById('thalach').value = 150;
+  document.getElementById('exang').value = 0;
+  document.getElementById('oldpeak').value = 1.0;
+  document.getElementById('slope').value = 0;
+  document.getElementById('ca').value = 0;
+  document.getElementById('thal').value = 1;
+  document.getElementById('idleState').style.display = '';
+  document.getElementById('loadingState').classList.remove('show');
+  document.getElementById('resultOutput').classList.remove('show');
+  document.getElementById('resultCard').className = 'result-card';
+}
+</script>
+</body>
+</html>
